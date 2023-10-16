@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "esp_http_server.h"
+#include "esp_https_server.h"
 #include "esp_timer.h"
 #include "esp_camera.h"
 #include "img_converters.h"
@@ -19,6 +20,8 @@
 #include "esp32-hal-ledc.h"
 #include "sdkconfig.h"
 #include "camera_index.h"
+#include "cert.h"
+#include "private_key.h"
 
 #if defined(ARDUINO_ARCH_ESP32) && defined(CONFIG_ARDUHAL_ESP_LOG)
 #include "esp32-hal-log.h"
@@ -1204,7 +1207,14 @@ static esp_err_t index_handler(httpd_req_t *req)
 
 void startCameraServer()
 {
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    httpd_config_t config=HTTPD_DEFAULT_CONFIG();
+    httpd_ssl_config_t configSSL = HTTPD_SSL_CONFIG_DEFAULT();
+    config.
+    configSSL.cacert_pem=example_crt_DER;
+    configSSL.prvtkey_pem=example_key_DER;
+    configSSL.cacert_len=example_key_DER_len;
+    configSSL.prvtkey_len=example_key_DER_len;
+
     config.max_uri_handlers = 16;
 
     httpd_uri_t index_uri = {
@@ -1359,27 +1369,32 @@ void startCameraServer()
     recognizer.set_ids_from_flash();
 #endif
     log_i("Starting web server on port: '%d'", config.server_port);
-    if (httpd_start(&camera_httpd, &config) == ESP_OK)
-    {
-        httpd_register_uri_handler(camera_httpd, &index_uri);
-        httpd_register_uri_handler(camera_httpd, &cmd_uri);
-        httpd_register_uri_handler(camera_httpd, &status_uri);
-        httpd_register_uri_handler(camera_httpd, &capture_uri);
-        httpd_register_uri_handler(camera_httpd, &bmp_uri);
+    // configSSL.httpd=config;
+    // if (httpd_start(&camera_httpd, &config) == ESP_OK)
+    // {
+    //     httpd_register_uri_handler(camera_httpd, &index_uri);
+    //     httpd_register_uri_handler(camera_httpd, &cmd_uri);
+    //     httpd_register_uri_handler(camera_httpd, &status_uri);
+    //     httpd_register_uri_handler(camera_httpd, &capture_uri);
+    //     httpd_register_uri_handler(camera_httpd, &bmp_uri);
 
-        httpd_register_uri_handler(camera_httpd, &xclk_uri);
-        httpd_register_uri_handler(camera_httpd, &reg_uri);
-        httpd_register_uri_handler(camera_httpd, &greg_uri);
-        httpd_register_uri_handler(camera_httpd, &pll_uri);
-        httpd_register_uri_handler(camera_httpd, &win_uri);
-    }
+    //     httpd_register_uri_handler(camera_httpd, &xclk_uri);
+    //     httpd_register_uri_handler(camera_httpd, &reg_uri);
+    //     httpd_register_uri_handler(camera_httpd, &greg_uri);
+    //     httpd_register_uri_handler(camera_httpd, &pll_uri);
+    //     httpd_register_uri_handler(camera_httpd, &win_uri);
+    // }
 
-    config.server_port += 1;
-    config.ctrl_port += 1;
+    // config.server_port += 1;
+    // config.ctrl_port += 1;
+
     log_i("Starting stream server on port: '%d'", config.server_port);
-    if (httpd_start(&stream_httpd, &config) == ESP_OK)
+    configSSL.httpd=config;
+ 
+    if (httpd_ssl_start(&stream_httpd, &configSSL) == ESP_OK)
     {
         httpd_register_uri_handler(stream_httpd, &stream_uri);
+        
     }
 }
 
