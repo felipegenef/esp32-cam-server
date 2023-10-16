@@ -1209,7 +1209,6 @@ void startCameraServer()
 {
     httpd_config_t config=HTTPD_DEFAULT_CONFIG();
     httpd_ssl_config_t configSSL = HTTPD_SSL_CONFIG_DEFAULT();
-    config.
     configSSL.cacert_pem=example_crt_DER;
     configSSL.prvtkey_pem=example_key_DER;
     configSSL.cacert_len=example_key_DER_len;
